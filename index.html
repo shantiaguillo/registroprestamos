@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Registro de Préstamo</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<style>
+:root {
+    --bg: #0b0c10;
+    --panel: rgba(20, 20, 20, 0.85);
+    --border: rgba(255,255,255,0.08);
+    --green: #00ff9c;
+    --silver: #c0c0c0;
+    --accent: #1f2833;
+    --text: #e6edf3;
+}
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: radial-gradient(circle at top, #1a1a1a, #000);
+    color: var(--text);
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+    color: var(--green);
+}
+
+.total {
+    text-align: center;
+    font-size: 24px;
+    margin: 15px 0;
+    color: var(--silver);
+}
+
+form {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+input, button {
+    padding: 8px;
+    border-radius: 8px;
+    border: none;
+}
+
+input {
+    background: var(--accent);
+    color: var(--green);
+    text-align: center;
+}
+
+button {
+    background: var(--green);
+    color: black;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button:disabled {
+    background: gray;
+    cursor: not-allowed;
+}
+
+button:hover:not(:disabled) {
+    box-shadow: 0 0 10px var(--green);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--panel);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+th {
+    background: #111;
+    color: var(--green);
+}
+
+td, th {
+    padding: 10px;
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+}
+
+#pdfBtn {
+    display: none;
+    margin: 20px auto;
+    background: var(--silver);
+    color: black;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Registro de Préstamo</h1>
+
+<form id="form-prestamo">
+    <input type="number" id="montoInicial" placeholder="Monto" required>
+    <input type="number" id="dias" placeholder="Días" required>
+    <button type="submit" id="btnGenerar">Generar</button>
+</form>
+
+<div class="total">Saldo restante: $<span id="saldo">0</span></div>
+
+<button id="pdfBtn" onclick="generarPDF()">Descargar PDF</button>
+
+<div id="contenido">
+<table>
+<thead>
+<tr>
+<th>Día</th>
+<th>Fecha</th>
+<th>Pago</th>
+<th>Acción</th>
+</tr>
+</thead>
+
+<tbody id="tabla">
+<tr>
+<td colspan="4" style="opacity:0.6;">
+Ingresa monto y días y presiona "Generar"
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<script>
+const tabla = document.getElementById("tabla");
+const saldoSpan = document.getElementById("saldo");
+const form = document.getElementById("form-prestamo");
+const pdfBtn = document.getElementById("pdfBtn");
+const btnGenerar = document.getElementById("btnGenerar");
+
+let prestamos = [];
+let montoInicialGlobal = 0;
+
+// GENERAR TABLA
+form.addEventListener("submit", function(e){
+    e.preventDefault();
+
+    const monto = Number(document.getElementById("montoInicial").value);
+    const dias = Number(document.getElementById("dias").value);
+
+    montoInicialGlobal = monto;
+    prestamos = [];
+
+    for (let i=0; i<dias; i++){
+        prestamos.push({
+            dia: i+1,
+            fecha: "",
+            pago: 0
+        });
+    }
+
+    localStorage.setItem("prestamos", JSON.stringify(prestamos));
+
+    generarTabla(dias);
+    bloquearFormulario();
+    actualizarTodo();
+
+    btnGenerar.disabled = true; // 🔒 bloquear botón
+    pdfBtn.style.display = "none"; // ocultar PDF
+});
+
+// GENERAR FILAS
+function generarTabla(dias){
+    tabla.innerHTML = "";
+
+    for (let i=0; i<dias; i++){
+        tabla.innerHTML += `
+        <tr>
+            <td>${i+1}</td>
+            <td><input type="date" id="fecha-${i}"></td>
+            <td><input type="number" id="pago-${i}" value="0"></td>
+            <td>
+                <button onclick="guardar(${i})">✔</button>
+                <button onclick="editar(${i})">✏</button>
+            </td>
+        </tr>`;
+    }
+}
+
+// GUARDAR CON VALIDACIÓN
+function guardar(i){
+    let pagoInput = document.getElementById(`pago-${i}`);
+    let fechaInput = document.getElementById(`fecha-${i}`);
+    let pago = Number(pagoInput.value);
+
+    let saldoActual = calcularSaldoActual();
+
+    if (pago > saldoActual){
+        let confirmar = confirm("El pago es mayor al saldo restante. ¿Estás seguro?");
+        if (!confirmar) return;
+    }
+
+    prestamos[i].pago = pago;
+    prestamos[i].fecha = fechaInput.value;
+
+    pagoInput.disabled = true;
+    fechaInput.disabled = true;
+
+    actualizarTodo();
+    localStorage.setItem("prestamos", JSON.stringify(prestamos));
+}
+
+// EDITAR
+function editar(i){
+    document.getElementById(`pago-${i}`).disabled = false;
+    document.getElementById(`fecha-${i}`).disabled = false;
+}
+
+// CALCULAR SALDO
+function calcularSaldoActual(){
+    let saldo = montoInicialGlobal;
+    prestamos.forEach(p => saldo -= p.pago || 0);
+    return saldo < 0 ? 0 : saldo;
+}
+
+// ACTUALIZAR
+function actualizarTodo(){
+    let saldo = calcularSaldoActual();
+    saldoSpan.textContent = saldo.toFixed(2);
+
+    if (saldo === 0){
+        desbloquearFormulario();
+        pdfBtn.style.display = "block";
+        btnGenerar.disabled = false; // 🔓 habilitar botón
+    }
+}
+
+// BLOQUEAR INPUTS
+function bloquearFormulario(){
+    document.getElementById("montoInicial").disabled = true;
+    document.getElementById("dias").disabled = true;
+}
+
+// DESBLOQUEAR
+function desbloquearFormulario(){
+    document.getElementById("montoInicial").disabled = false;
+    document.getElementById("dias").disabled = false;
+    document.getElementById("montoInicial").value = "";
+    document.getElementById("dias").value = "";
+    localStorage.removeItem("prestamos");
+}
+
+// PDF
+function generarPDF(){
+    const element = document.getElementById("contenido");
+    html2pdf().from(element).save("prestamo_pagado.pdf");
+}
+</script>
+
+</body>
+</html>
