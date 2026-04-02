@@ -63,7 +63,7 @@ button {
 }
 
 button:disabled {
-    background: gray;
+    background: #555;
     cursor: not-allowed;
 }
 
@@ -88,6 +88,17 @@ td, th {
     padding: 10px;
     border-bottom: 1px solid var(--border);
     text-align: center;
+}
+
+/* 🔥 asegura fondo oscuro siempre */
+#tabla tr {
+    background: var(--panel);
+}
+
+/* placeholder */
+.placeholder {
+    opacity: 0.6;
+    color: var(--silver);
 }
 
 #pdfBtn {
@@ -125,12 +136,13 @@ td, th {
 </thead>
 
 <tbody id="tabla">
-<tr>
-<td colspan="4" style="opacity:0.6;">
+<tr class="placeholder">
+<td colspan="4">
 Ingresa monto y días y presiona "Generar"
 </td>
 </tr>
 </tbody>
+
 </table>
 </div>
 
@@ -158,7 +170,8 @@ form.addEventListener("submit", function(e){
         prestamos.push({
             dia: i+1,
             fecha: "",
-            pago: 0
+            pago: 0,
+            montoInicial: montoInicialGlobal
         });
     }
 
@@ -168,8 +181,8 @@ form.addEventListener("submit", function(e){
     bloquearFormulario();
     actualizarTodo();
 
-    btnGenerar.disabled = true; // 🔒 bloquear botón
-    pdfBtn.style.display = "none"; // ocultar PDF
+    btnGenerar.disabled = true;
+    pdfBtn.style.display = "none";
 });
 
 // GENERAR FILAS
@@ -190,7 +203,7 @@ function generarTabla(dias){
     }
 }
 
-// GUARDAR CON VALIDACIÓN
+// GUARDAR
 function guardar(i){
     let pagoInput = document.getElementById(`pago-${i}`);
     let fechaInput = document.getElementById(`fecha-${i}`);
@@ -219,7 +232,7 @@ function editar(i){
     document.getElementById(`fecha-${i}`).disabled = false;
 }
 
-// CALCULAR SALDO
+// SALDO
 function calcularSaldoActual(){
     let saldo = montoInicialGlobal;
     prestamos.forEach(p => saldo -= p.pago || 0);
@@ -234,11 +247,11 @@ function actualizarTodo(){
     if (saldo === 0){
         desbloquearFormulario();
         pdfBtn.style.display = "block";
-        btnGenerar.disabled = false; // 🔓 habilitar botón
+        btnGenerar.disabled = false;
     }
 }
 
-// BLOQUEAR INPUTS
+// BLOQUEAR
 function bloquearFormulario(){
     document.getElementById("montoInicial").disabled = true;
     document.getElementById("dias").disabled = true;
@@ -258,6 +271,32 @@ function generarPDF(){
     const element = document.getElementById("contenido");
     html2pdf().from(element).save("prestamo_pagado.pdf");
 }
+
+// 🔁 CARGAR DATOS AL INICIAR
+window.addEventListener("load", () => {
+    const data = JSON.parse(localStorage.getItem("prestamos"));
+
+    if (data && data.length > 0){
+        prestamos = data;
+        montoInicialGlobal = data[0].montoInicial || 0;
+
+        generarTabla(prestamos.length);
+
+        prestamos.forEach((p, i) => {
+            document.getElementById(`pago-${i}`).value = p.pago;
+            document.getElementById(`fecha-${i}`).value = p.fecha;
+
+            if (p.pago > 0){
+                document.getElementById(`pago-${i}`).disabled = true;
+                document.getElementById(`fecha-${i}`).disabled = true;
+            }
+        });
+
+        bloquearFormulario();
+        btnGenerar.disabled = true;
+        actualizarTodo();
+    }
+});
 </script>
 
 </body>
