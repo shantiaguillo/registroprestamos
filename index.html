@@ -90,12 +90,10 @@ td, th {
     text-align: center;
 }
 
-/* 🔥 asegura fondo oscuro siempre */
 #tabla tr {
     background: var(--panel);
 }
 
-/* placeholder */
 .placeholder {
     opacity: 0.6;
     color: var(--silver);
@@ -193,7 +191,7 @@ function generarTabla(dias){
         tabla.innerHTML += `
         <tr>
             <td>${i+1}</td>
-            <td><input type="date" id="fecha-${i}"></td>
+            <td><input type="date" id="fecha-${i}" required></td>
             <td><input type="number" id="pago-${i}" value="0"></td>
             <td>
                 <button onclick="guardar(${i})">✔</button>
@@ -208,6 +206,12 @@ function guardar(i){
     let pagoInput = document.getElementById(`pago-${i}`);
     let fechaInput = document.getElementById(`fecha-${i}`);
     let pago = Number(pagoInput.value);
+
+    if (!fechaInput.value){
+        alert("Debes ingresar una fecha antes de guardar.");
+        fechaInput.focus();
+        return;
+    }
 
     let saldoActual = calcularSaldoActual();
 
@@ -269,7 +273,17 @@ function desbloquearFormulario(){
 // PDF
 function generarPDF(){
     const element = document.getElementById("contenido");
-    html2pdf().from(element).save("prestamo_pagado.pdf");
+
+    // Opciones de html2pdf
+    let opt = {
+        margin:       0.5,
+        filename:     'prestamo_pagado.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(element).save();
 }
 
 // 🔁 CARGAR DATOS AL INICIAR
