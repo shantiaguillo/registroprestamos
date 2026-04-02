@@ -2,8 +2,8 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Registro de Préstamo</title>
-
+<title>Registro de Préstamo 💰</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><text y='20' font-size='20'>💰</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <style>
@@ -110,7 +110,7 @@ td, th {
 
 <body>
 
-<h1>Registro de Préstamo</h1>
+<h1>Registro de Préstamo 💰</h1>
 
 <form id="form-prestamo">
     <input type="number" id="montoInicial" placeholder="Monto" required>
@@ -120,7 +120,7 @@ td, th {
 
 <div class="total">Saldo restante: $<span id="saldo">0</span></div>
 
-<button id="pdfBtn" onclick="generarPDF()">Descargar PDF</button>
+<button id="pdfBtn" onclick="generarPDF()">Descargar PDF 💰</button>
 
 <div id="contenido">
 <table>
@@ -136,7 +136,7 @@ td, th {
 <tbody id="tabla">
 <tr class="placeholder">
 <td colspan="4">
-Ingresa monto y días y presiona "Generar"
+Ingresa monto y días y presiona "Generar" 💰
 </td>
 </tr>
 </tbody>
@@ -194,8 +194,8 @@ function generarTabla(dias){
             <td><input type="date" id="fecha-${i}" required></td>
             <td><input type="number" id="pago-${i}" value="0"></td>
             <td>
-                <button onclick="guardar(${i})">✔</button>
-                <button onclick="editar(${i})">✏</button>
+                <button onclick="guardar(${i})">Guardar</button>
+                <button onclick="editar(${i})">Editar</button>
             </td>
         </tr>`;
     }
@@ -208,7 +208,7 @@ function guardar(i){
     let pago = Number(pagoInput.value);
 
     if (!fechaInput.value){
-        alert("Debes ingresar una fecha antes de guardar.");
+        alert("Debes ingresar una fecha antes de guardar 💰.");
         fechaInput.focus();
         return;
     }
@@ -216,7 +216,7 @@ function guardar(i){
     let saldoActual = calcularSaldoActual();
 
     if (pago > saldoActual){
-        let confirmar = confirm("El pago es mayor al saldo restante. ¿Estás seguro?");
+        let confirmar = confirm("El pago es mayor al saldo restante. ¿Estás seguro? 💰");
         if (!confirmar) return;
     }
 
